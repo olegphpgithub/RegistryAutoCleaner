@@ -91,7 +91,8 @@ void MainWindow::ClearRegistry()
         );
 
         if(res == ERROR_SUCCESS) {
-            qDebug() << dwcSubKeys;
+            
+            QStringList NNRusMutexsStringList;
 
             for (int i=0; i<dwcSubKeys; i++) {
 
@@ -107,16 +108,12 @@ void MainWindow::ClearRegistry()
 
                 if(res == ERROR_SUCCESS) {
                     
-                    bool isNNRusMutex = false;
-                    
-                    TCHAR lptstrFullPath[MAX_KEY_LENGTH];
-                    StringCchPrintf(lptstrFullPath, MAX_KEY_LENGTH, TEXT("%s\\%s"), lptstrSearchScope, lptstrKeyPath);
-                    
-                    qDebug() << QString::fromWCharArray(lptstrFullPath);
+                    TCHAR lptstrNNRusMutexPath[MAX_KEY_LENGTH];
+                    StringCchPrintf(lptstrNNRusMutexPath, MAX_KEY_LENGTH, TEXT("%s\\%s"), lptstrSearchScope, lptstrKeyPath);
                     
                     HKEY hKeyNNRusMutex;
                     LONG res = RegOpenKeyEx(HKEY_CURRENT_USER,
-                        lptstrFullPath,
+                        lptstrNNRusMutexPath,
                         0,
                         KEY_READ | KEY_WRITE,
                         &hKeyNNRusMutex
@@ -125,7 +122,6 @@ void MainWindow::ClearRegistry()
                     if (res == ERROR_SUCCESS) {
                         DWORD ts = 0;
                         DWORD dwSize = sizeof(DWORD);
-                        
                         
                         res = RegGetValue(hKeyNNRusMutex,
                             NULL,
@@ -136,29 +132,38 @@ void MainWindow::ClearRegistry()
                             &dwSize
                         );
                         
-                        qDebug() << res;
-                        
                         if(res == ERROR_SUCCESS) {
-                            //MessageBox(NULL, TEXT("found"), TEXT("4"), MB_OK);
-                            isNNRusMutex = true;
+                            
+                            NNRusMutexsStringList.append(QString::fromWCharArray(lptstrNNRusMutexPath));
+                            
                         }
 
                     }
                     
                     RegCloseKey(hKeyNNRusMutex);
                     
-                    /*
-                    res = RegDeleteTree(
-                        HKEY_CURRENT_USER,
-                        lptstrFullPath
-                    );
                     
-                    qDebug() << res;
-                    */
-                    qDebug() << "-------------------";
+                    
                 }
-
+            
             }
+            
+            foreach (const QString &str, NNRusMutexsStringList) {
+                qDebug() << "+++";
+                qDebug() << str;
+                qDebug() << "-------------------";
+                
+                /*
+                res = RegDeleteTree(
+                    HKEY_CURRENT_USER,
+                    lptstrFullPath
+                );
+                
+                qDebug() << res;
+                */
+                
+            }
+            
         }
 
     }
