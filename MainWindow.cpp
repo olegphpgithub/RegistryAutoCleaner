@@ -18,12 +18,43 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     QObject::connect(ui->ClearPushButton, SIGNAL(pressed()), this, SLOT(ClearRegistry()));
+    QObject::connect(ui->AutoClearPushButton, SIGNAL(pressed()), this, SLOT(ClearRegistry2()));
 
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::ClearRegistry2()
+{
+    qDebug() << "11";
+
+    HKEY hKey;
+
+    DWORD value;
+    DWORD BufferSize = sizeof(DWORD);
+    
+    TCHAR lptstrSearchScope[MAX_KEY_LENGTH] = TEXT("Software\\OU_01_504ac2ff4962402ea1a02e7bf85fdfaa");
+
+    LONG res = RegOpenKeyEx(HKEY_CURRENT_USER, lptstrSearchScope, 0, KEY_READ | KEY_WRITE, &hKey);
+    if (res == ERROR_SUCCESS)
+    {
+        qDebug() << "22";
+        
+        res = RegGetValue(hKey,
+            NULL,
+            TEXT("ts"),
+            RRF_RT_ANY,
+            NULL,
+            (PVOID)&value,
+            &BufferSize
+            );
+        
+        qDebug() << res;
+        qDebug() << value;
+    }
 }
 
 
@@ -75,11 +106,14 @@ void MainWindow::ClearRegistry()
                 );
 
                 if(res == ERROR_SUCCESS) {
-
+                    
+                    bool isNNRusMutex = false;
+                    
                     TCHAR lptstrFullPath[MAX_KEY_LENGTH];
                     StringCchPrintf(lptstrFullPath, MAX_KEY_LENGTH, TEXT("%s\\%s"), lptstrSearchScope, lptstrKeyPath);
-                    MessageBox(NULL, lptstrFullPath, TEXT("3"), MB_OK);
-
+                    
+                    qDebug() << QString::fromWCharArray(lptstrFullPath);
+                    
                     HKEY hKeyNNRusMutex;
                     LONG res = RegOpenKeyEx(HKEY_CURRENT_USER,
                         lptstrFullPath,
@@ -89,20 +123,39 @@ void MainWindow::ClearRegistry()
                     );
 
                     if (res == ERROR_SUCCESS) {
-                        //CHAR pvDataText[MAX_VALUE_NAME];
-                        //DWORD pcbData = MAX_VALUE_NAME;
                         DWORD ts = 0;
                         DWORD dwSize = sizeof(DWORD);
-
-                        res = RegQueryValueEx(hKeyNNRusMutex, TEXT("ts"), NULL, NULL, (LPBYTE)&ts, &dwSize);
-
-                        if(res = ERROR_SUCCESS) {
-                            MessageBox(NULL, TEXT("found"), TEXT("4"), MB_OK);
+                        
+                        
+                        res = RegGetValue(hKeyNNRusMutex,
+                            NULL,
+                            TEXT("ts"),
+                            RRF_RT_ANY,
+                            NULL,
+                            (PVOID)&ts,
+                            &dwSize
+                        );
+                        
+                        qDebug() << res;
+                        
+                        if(res == ERROR_SUCCESS) {
+                            //MessageBox(NULL, TEXT("found"), TEXT("4"), MB_OK);
+                            isNNRusMutex = true;
                         }
 
                     }
-
-
+                    
+                    RegCloseKey(hKeyNNRusMutex);
+                    
+                    /*
+                    res = RegDeleteTree(
+                        HKEY_CURRENT_USER,
+                        lptstrFullPath
+                    );
+                    
+                    qDebug() << res;
+                    */
+                    qDebug() << "-------------------";
                 }
 
             }

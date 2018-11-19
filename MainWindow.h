@@ -17,6 +17,7 @@ public:
 
 public slots:
     void ClearRegistry();
+    void ClearRegistry2();
 
 private:
     Ui::MainWindow *ui;
