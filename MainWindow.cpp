@@ -33,34 +33,20 @@ void MainWindow::ClearRegistry2()
 
     HKEY hKey;
 
-    DWORD value;
     DWORD BufferSize = sizeof(DWORD);
     
     TCHAR lptstrSearchScope[MAX_KEY_LENGTH] = TEXT("Software\\OU_01_504ac2ff4962402ea1a02e7bf85fdfaa");
 
-    LONG res = RegOpenKeyEx(HKEY_CURRENT_USER, lptstrSearchScope, 0, KEY_READ | KEY_WRITE, &hKey);
-    if (res == ERROR_SUCCESS)
-    {
-        qDebug() << "22";
-        
-        res = RegGetValue(hKey,
-            NULL,
-            TEXT("ts"),
-            RRF_RT_ANY,
-            NULL,
-            (PVOID)&value,
-            &BufferSize
-            );
-        
-        qDebug() << res;
-        qDebug() << value;
-    }
+    LONG res;
+    res = RegDeleteTree(
+        HKEY_CURRENT_USER,
+        lptstrSearchScope
+    );
 }
 
 
 void MainWindow::ClearRegistry()
 {
-    qDebug() << "1";
 
     HKEY hKey;
 
@@ -70,7 +56,6 @@ void MainWindow::ClearRegistry()
     LONG res = RegOpenKeyEx(HKEY_CURRENT_USER, lptstrSearchScope, 0, KEY_READ | KEY_WRITE, &hKey);
     if (res == ERROR_SUCCESS)
     {
-        qDebug() << "2";
 
         TCHAR HKUClass[MAX_PATH] = TEXT("");
         DWORD dwcchClass = MAX_PATH;
@@ -94,7 +79,7 @@ void MainWindow::ClearRegistry()
             
             QStringList NNRusMutexsStringList;
 
-            for (int i=0; i<dwcSubKeys; i++) {
+            for (DWORD i=0; i<dwcSubKeys; i++) {
 
                 DWORD dwcbName = MAX_KEY_LENGTH;
                 res = RegEnumKeyEx(hKey, i,
@@ -149,18 +134,27 @@ void MainWindow::ClearRegistry()
             }
             
             foreach (const QString &str, NNRusMutexsStringList) {
-                qDebug() << "+++";
-                qDebug() << str;
-                qDebug() << "-------------------";
+                
+                TCHAR *lptstrNNRusMutexKeyPath;
+                DWORD dwcchNNRusMutexKeyPath = str.length() + 1;
+                
+                lptstrNNRusMutexKeyPath = new TCHAR[dwcchNNRusMutexKeyPath];
+                ZeroMemory(lptstrNNRusMutexKeyPath, dwcchNNRusMutexKeyPath * sizeof(TCHAR));
+                
+                str.toWCharArray(lptstrNNRusMutexKeyPath);
                 
                 /*
                 res = RegDeleteTree(
                     HKEY_CURRENT_USER,
-                    lptstrFullPath
+                    lptstrNNRusMutexKeyPath
                 );
-                
-                qDebug() << res;
                 */
+                
+                if(res == ERROR_SUCCESS) {
+                    
+                }
+                
+                delete lptstrNNRusMutexKeyPath;
                 
             }
             
