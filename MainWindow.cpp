@@ -127,8 +127,6 @@ void MainWindow::ClearRegistry()
                     
                     RegCloseKey(hKeyNNRusMutex);
                     
-                    
-                    
                 }
             
             }
@@ -151,7 +149,9 @@ void MainWindow::ClearRegistry()
                 */
                 
                 if(res == ERROR_SUCCESS) {
-                    
+                    QString logString("%1 was removed successfully");
+                    logString = logString.arg(str);
+                    ui->LogTextEdit->append(logString);
                 }
                 
                 delete lptstrNNRusMutexKeyPath;
