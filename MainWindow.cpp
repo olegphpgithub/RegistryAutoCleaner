@@ -5,6 +5,9 @@
 
 #include <QtDebug>
 #include <QDateTime>
+
+#include "SimpleTimer.h"
+
 #include <Windows.h>
 #include <WtsApi32.h>
 #include <strsafe.h>
@@ -19,8 +22,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     QObject::connect(ui->ClearPushButton, SIGNAL(pressed()), this, SLOT(ClearRegistry()));
-    QObject::connect(ui->AutoClearPushButton, SIGNAL(pressed()), this, SLOT(ClearRegistry2()));
-
+    QObject::connect(ui->AutoClearPushButton, SIGNAL(pressed()), this, SLOT(AutoClearStartStop()));
+    bAutoClear = false;
 }
 
 MainWindow::~MainWindow()
@@ -28,21 +31,37 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::ClearRegistry2()
+void MainWindow::AutoClearStartStop()
 {
-    qDebug() << "11";
+    bAutoClear = (bAutoClear == true) ? false : true;
 
-    HKEY hKey;
+    if(bAutoClear) {
+        ui->AutoClearPushButton->setText(QObject::tr("Auto Clear (Stop)"));
+        stimer = new SimpleTimer(this);
+        stimer->setTimeout(ui->IntervalSpinBox->value());
+        QObject::connect(stimer, SIGNAL(finished()), this, SLOT(TimeoutExceeded()));
+        stimer->start();
+    } else {
+        ui->AutoClearPushButton->setText(QObject::tr("Auto Clear (Start)"));
+        QObject::disconnect(stimer, SIGNAL(finished()), this, SLOT(TimeoutExceeded()));
+        stimer->terminate();
+        stimer->deleteLater();
+    }
+}
 
-    DWORD BufferSize = sizeof(DWORD);
-    
-    TCHAR lptstrSearchScope[MAX_KEY_LENGTH] = TEXT("Software\\OU_01_504ac2ff4962402ea1a02e7bf85fdfaa");
-
-    LONG res;
-    res = RegDeleteTree(
-        HKEY_CURRENT_USER,
-        lptstrSearchScope
-    );
+void MainWindow::TimeoutExceeded()
+{
+    ClearRegistry();
+    if(bAutoClear) {
+        if(stimer != NULL) {
+            QObject::disconnect(stimer, SIGNAL(finished()), this, SLOT(TimeoutExceeded()));
+            delete stimer;
+        }
+        stimer = new SimpleTimer(this);
+        stimer->setTimeout(ui->IntervalSpinBox->value());
+        QObject::connect(stimer, SIGNAL(finished()), this, SLOT(TimeoutExceeded()));
+        stimer->start();
+    }
 }
 
 
@@ -53,6 +72,9 @@ void MainWindow::ClearRegistry()
 
     TCHAR lptstrKeyPath[MAX_KEY_LENGTH];
     TCHAR lptstrSearchScope[MAX_KEY_LENGTH] = TEXT("Software");
+
+    DWORD lpcdwSubKeys2 = 0;
+    DWORD lpcdwSubValues2 = 0;
 
     LONG res = RegOpenKeyEx(HKEY_CURRENT_USER, lptstrSearchScope, 0, KEY_READ | KEY_WRITE, &hKey);
     if (res == ERROR_SUCCESS)
@@ -96,7 +118,7 @@ void MainWindow::ClearRegistry()
                     
                     TCHAR lptstrNNRusMutexPath[MAX_KEY_LENGTH];
                     StringCchPrintf(lptstrNNRusMutexPath, MAX_KEY_LENGTH, TEXT("%s\\%s"), lptstrSearchScope, lptstrKeyPath);
-                    
+                               
                     HKEY hKeyNNRusMutex;
                     LONG res = RegOpenKeyEx(HKEY_CURRENT_USER,
                         lptstrNNRusMutexPath,
@@ -106,22 +128,43 @@ void MainWindow::ClearRegistry()
                     );
 
                     if (res == ERROR_SUCCESS) {
-                        DWORD ts = 0;
-                        DWORD dwSize = sizeof(DWORD);
-                        
-                        res = RegGetValue(hKeyNNRusMutex,
+
+                        /** +++++ Registry key must have only one value */
+
+                        res = RegQueryInfoKey (hKeyNNRusMutex,
                             NULL,
-                            TEXT("ts"),
-                            RRF_RT_ANY,
                             NULL,
-                            (PVOID)&ts,
-                            &dwSize
+                            NULL,
+                            &lpcdwSubKeys2,
+                            NULL,
+                            NULL,
+                            &lpcdwSubValues2,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL
                         );
-                        
-                        if(res == ERROR_SUCCESS) {
-                            
-                            NNRusMutexsStringList.append(QString::fromWCharArray(lptstrNNRusMutexPath));
-                            
+
+                        if( (lpcdwSubKeys2 == 0) && (lpcdwSubValues2 == 1) ) {
+
+                            DWORD ts = 0;
+                            DWORD dwSize = sizeof(DWORD);
+
+                            res = RegGetValue(hKeyNNRusMutex,
+                                NULL,
+                                TEXT("ts"),
+                                RRF_RT_ANY,
+                                NULL,
+                                (PVOID)&ts,
+                                &dwSize
+                            );
+
+                            if(res == ERROR_SUCCESS) {
+
+                                NNRusMutexsStringList.append(QString::fromWCharArray(lptstrNNRusMutexPath));
+
+                            }
+
                         }
 
                     }
@@ -142,12 +185,10 @@ void MainWindow::ClearRegistry()
                 
                 str.toWCharArray(lptstrNNRusMutexKeyPath);
                 
-                /*
                 res = RegDeleteTree(
                     HKEY_CURRENT_USER,
                     lptstrNNRusMutexKeyPath
                 );
-                */
                 
                 if(res == ERROR_SUCCESS) {
                     QDateTime currentDateTime = QDateTime::currentDateTime();

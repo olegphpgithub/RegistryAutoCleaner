@@ -1,13 +1,17 @@
 #include "SimpleTimer.h"
 
-SimpleTimer::SimpleTimer()
+#include <QtCore>
+#include <QString>
+#include <QtDebug>
+
+SimpleTimer::SimpleTimer(QObject *parent) : QThread(parent)
 {
     qDebug() << "SimpleTimer constructor";
 }
 
 SimpleTimer::~SimpleTimer()
 {
-    qDebug() << "SimpleTimer constructor";
+    qDebug() << "SimpleTimer destructor";
 }
 
 void SimpleTimer::setTimeout(int timeOut)
@@ -17,7 +21,6 @@ void SimpleTimer::setTimeout(int timeOut)
 
 void SimpleTimer::run() {
 
-    int i = 3;
-    sleep(i);
+    sleep(iTimeOut);
 
 }

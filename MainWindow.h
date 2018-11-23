@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+class SimpleTimer;
+
 namespace Ui {
 class MainWindow;
 }
@@ -17,10 +19,13 @@ public:
 
 public slots:
     void ClearRegistry();
-    void ClearRegistry2();
+    void AutoClearStartStop();
+    void TimeoutExceeded();
 
 private:
     Ui::MainWindow *ui;
+    bool bAutoClear;
+    SimpleTimer *stimer;
 };
 
 #endif // MAINWINDOW_H

@@ -1,6 +1,7 @@
 #ifndef SIMPLETIMER_H
 #define SIMPLETIMER_H
 
+#include <QThread>
 
 class SimpleTimer : public QThread
 {
