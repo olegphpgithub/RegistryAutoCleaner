@@ -4,6 +4,7 @@
 #define MAX_KEY_LENGTH 255
 
 #include <QtDebug>
+#include <QDateTime>
 #include <Windows.h>
 #include <WtsApi32.h>
 #include <strsafe.h>
@@ -149,7 +150,10 @@ void MainWindow::ClearRegistry()
                 */
                 
                 if(res == ERROR_SUCCESS) {
-                    QString logString("%1 was removed successfully");
+                    QDateTime currentDateTime = QDateTime::currentDateTime();
+                    QString dateTimeString = currentDateTime.toString("yyyy-MM-dd hh:mm:ss");
+                    QString logString("%1 %2 was removed successfully");
+                    logString = logString.arg(dateTimeString);
                     logString = logString.arg(str);
                     ui->LogTextEdit->append(logString);
                 }
