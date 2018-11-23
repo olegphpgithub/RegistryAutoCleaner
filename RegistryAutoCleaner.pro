@@ -15,8 +15,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        MainWindow.cpp
+        MainWindow.cpp \
+    SimpleTimer.cpp
 
-HEADERS  += MainWindow.h
+HEADERS  += MainWindow.h \
+    SimpleTimer.h
 
 FORMS    += MainWindow.ui
