@@ -20,3 +20,5 @@ HEADERS  += MainWindow.h \
     SimpleTimer.h
 
 FORMS    += MainWindow.ui
+
+RC_FILE = RegistryAutoCleaner.rc
