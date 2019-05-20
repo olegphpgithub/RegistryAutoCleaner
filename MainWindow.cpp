@@ -2,6 +2,7 @@
 #include "ui_MainWindow.h"
 
 #define MAX_KEY_LENGTH 255
+#define MAX_VALUE_NAME 16383
 
 #include <QtDebug>
 #include <QDateTime>
@@ -76,6 +77,9 @@ void MainWindow::ClearRegistry()
     DWORD lpcdwSubKeys2 = 0;
     DWORD lpcdwSubValues2 = 0;
 
+    TCHAR lptstrValueName[MAX_VALUE_NAME];
+    DWORD dwcchValueName = MAX_VALUE_NAME;
+
     LONG res = RegOpenKeyEx(HKEY_CURRENT_USER, lptstrSearchScope, 0, KEY_READ | KEY_WRITE, &hKey);
     if (res == ERROR_SUCCESS)
     {
@@ -99,7 +103,7 @@ void MainWindow::ClearRegistry()
         );
 
         if(res == ERROR_SUCCESS) {
-            
+
             QStringList NNRusMutexsStringList;
 
             for (DWORD i=0; i<dwcSubKeys; i++) {
@@ -115,10 +119,10 @@ void MainWindow::ClearRegistry()
                 );
 
                 if(res == ERROR_SUCCESS) {
-                    
+
                     TCHAR lptstrNNRusMutexPath[MAX_KEY_LENGTH];
                     StringCchPrintf(lptstrNNRusMutexPath, MAX_KEY_LENGTH, TEXT("%s\\%s"), lptstrSearchScope, lptstrKeyPath);
-                               
+
                     HKEY hKeyNNRusMutex;
                     LONG res = RegOpenKeyEx(HKEY_CURRENT_USER,
                         lptstrNNRusMutexPath,
@@ -147,34 +151,37 @@ void MainWindow::ClearRegistry()
 
                         if( (lpcdwSubKeys2 == 0) && (lpcdwSubValues2 == 1) ) {
 
-                            DWORD ts = 0;
-                            DWORD dwSize = sizeof(DWORD);
+                            /** Name must have 2 chars */
 
-                            res = RegGetValue(hKeyNNRusMutex,
+                            dwcchValueName = MAX_VALUE_NAME;
+                            ZeroMemory(lptstrValueName, MAX_VALUE_NAME);
+
+                            res = RegEnumValue(hKeyNNRusMutex,
+                                0,
+                                lptstrValueName,
+                                &dwcchValueName,
                                 NULL,
-                                TEXT("ts"),
-                                RRF_RT_ANY,
                                 NULL,
-                                (PVOID)&ts,
-                                &dwSize
+                                NULL,
+                                NULL
                             );
 
                             if(res == ERROR_SUCCESS) {
-
-                                NNRusMutexsStringList.append(QString::fromWCharArray(lptstrNNRusMutexPath));
-
+                                if(dwcchValueName == 2) {
+                                    NNRusMutexsStringList.append(QString::fromWCharArray(lptstrNNRusMutexPath));
+                                }
                             }
 
                         }
 
                     }
-                    
+
                     RegCloseKey(hKeyNNRusMutex);
-                    
+
                 }
-            
+
             }
-            
+
             foreach (const QString &str, NNRusMutexsStringList) {
                 
                 TCHAR *lptstrNNRusMutexKeyPath;
